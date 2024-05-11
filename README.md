@@ -166,3 +166,5 @@ curl -X DELETE -H "Content-Type: application/json" -H "Authorization: Bearer ...
 
 ## SPA認証は全く別の機能
 Sanctum内に2つの機能が含まれてるのが混乱の元なのでAPIトークン認証を使いたいならSPA認証のことは何も見ず忘れる。
+
+SPA認証のサンプルは別で作るかもしれない。
