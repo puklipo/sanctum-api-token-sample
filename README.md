@@ -21,7 +21,7 @@ DBのマイグレーションも実行。
 
 Laravel11のapiをインストール。
 ```shell
-cd sanctum-spa-sample
+cd sanctum-api-token-sample
 php artisan install:api
 ```
 
