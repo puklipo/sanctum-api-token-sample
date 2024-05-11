@@ -69,8 +69,8 @@ php artisan token:create
 ...token...
 ```
 
-`createToken()`で作成するだけなので難しいことはない。
-nameは何のためのトークンか識別するための任意の名前。ユーザーが入力してもいい。
+`createToken()`で作成するだけなので難しいことはない。  
+nameは何のためのトークンか識別するための任意の名前。ユーザーが入力してもいい。  
 abilitiesは細かい権限の制御がしたい場合に使う。認証してるかの確認だけでいいなら省略可能。
 
 plainTextTokenが実際のトークン。DB内にはハッシュ化して保存されるので元のトークンは作成直後のこの瞬間にしか存在しない。
@@ -90,7 +90,7 @@ $response = Http::withToken($token)->get('https://localhost/api/user');
 dump($response->json());
 ```
 
-サーバーサイドからはCSRFもCORSも関係ない。
+サーバーサイドからはCSRFもCORSも関係ない。  
 同じLaravelプロジェクト内からはこんな使い方する必要はないので間違えないように。とんでもない初心者がやりがちなこと。
 
 ### 別ドメインのフロントエンドから
@@ -107,7 +107,7 @@ response = await fetch('https://localhost/api/user', {
 console.log(await response.json())
 ```
 
-別ドメインのフロントからリクエストが送れるかどうかはCORSで対応すること。Sanctumとは関係ない話。
+別ドメインのフロントからリクエストが送れるかどうかはCORSで対応すること。Sanctumとは関係ない話。  
 Laravel11のデフォルトでは`/api/*`以下は全部どのドメインからでも許可しているので外部向けAPIをすべて`routes/api.php`で定義するなら何もしなくていい。
 
 ## APIで外部からのログイン・ログアウト
@@ -144,7 +144,7 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 ```
 
-seederで作ったテストユーザー（test@example.comとpassword）でログインする。
+seederで作ったテストユーザー（test@example.comとpassword）でログインする。  
 `php artisan serve`でLaravelを起動した状態で
 
 ```shell
