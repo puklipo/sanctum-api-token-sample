@@ -1,66 +1,168 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Laravel Sanctum APIトークン認証のサンプル
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## バージョン
+- Laravel11
+- Sanctum 4.x
 
-## About Laravel
+Laravelの話をする時は必ずバージョンを確認する。古いバージョンにはない機能や将来のバージョンでは使い方が変わってることがよくある。
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Sanctumには2つの機能がある
+**APIトークン認証**と**SPA認証**。最初にこれの理解が必須。
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+**APIトークン認証**の使い方は簡単でSanctumの説明でよく出てくる`sanctum/csrf-cookie`とかは一切関係ない。
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## プロジェクト作成
+`laravel/installer`を使用。スターターキットなしを選択。
+```shell
+laravel new sanctum-api-token-sample
+```
+途中で聞かれる質問は適当に`PHPUnit` `SQLite`を選択。
+DBのマイグレーションも実行。
 
-## Learning Laravel
+Laravel11のapiをインストール。
+```shell
+cd sanctum-spa-sample
+php artisan install:api
+```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+```shell
+   INFO  API scaffolding installed. Please add the [Laravel\Sanctum\HasApiTokens] trait to your User model.
+```
+`Laravel\Sanctum\HasApiTokens`を`app/Models/User.php`に追加。
+```php
+use Laravel\Sanctum\HasApiTokens;
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+class User extends Authenticatable
+{
+    use HasFactory, Notifiable;
+    use HasApiTokens;
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## テストユーザーの作成
+Laravel11ならDatabaseSeederにテストユーザーを作る部分が用意されているので
+```php
+        User::factory()->create([
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+        ]);
+```
+seedを実行するだけ。
+```shell
+php artisan db:seed
+```
 
-## Laravel Sponsors
+## APIトークンの作成
+今回はサンプルなので`routes/console.php`にコマンドを作る。
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```php
+use App\Models\User;
+use Illuminate\Support\Facades\Artisan;
 
-### Premium Partners
+Artisan::command('token:create {user=1}', function (string $user) {
+    $this->info(User::findOrFail($user)->createToken(name: 'token', abilities: ['admin'])->plainTextToken);
+    $this->warn('APIトークンは一度しか表示されないので必ず保存してください。');
+});
+```
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+```shell
+php artisan token:create
+...token...
+```
 
-## Contributing
+`createToken()`で作成するだけなので難しいことはない。
+nameは何のためのトークンか識別するための任意の名前。ユーザーが入力してもいい。
+abilitiesは細かい権限の制御がしたい場合に使う。認証してるかの確認だけでいいなら省略可能。
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+plainTextTokenが実際のトークン。DB内にはハッシュ化して保存されるので元のトークンは作成直後のこの瞬間にしか存在しない。
 
-## Code of Conduct
+「ブラウザで表示してユーザーに保存してもらう」とか「フロントならlocalStorageに保存する」とか
+トークンをどう扱うかはSanctumを使う開発者が決めること。Laravel側は何も提示してない。ここを自分で決めないとAPIトークン認証の使い方が分からない。
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## APIトークンを使って認証
+APIトークン認証はHTTPリクエストのAuthorizationヘッダーに正しいトークンさえ付けていればサーバーサイドからでも別ドメインのフロントからでもモバイルアプリからでも使える。同じドメイン間のみのSPA認証との大きな違い。
 
-## Security Vulnerabilities
+### 別のLaravelプロジェクトから
+```php
+use Illuminate\Support\Facades\Http;
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+$response = Http::withToken($token)->get('https://localhost/api/user');
 
-## License
+dump($response->json());
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+サーバーサイドからはCSRFもCORSも関係ない。
+同じLaravelプロジェクト内からはこんな使い方する必要はないので間違えないように。とんでもない初心者がやりがちなこと。
+
+### 別ドメインのフロントエンドから
+awaitが使えるかとか環境によるだろうから簡易的なサンプル。
+`sanctum/csrf-cookie`なんて全く関係ないってことだけ間違えない。
+
+```js
+response = await fetch('https://localhost/api/user', {
+    headers: {
+        Authorization: 'Bearer ' + token
+    }
+});
+
+console.log(await response.json())
+```
+
+別ドメインのフロントからリクエストが送れるかどうかはCORSで対応すること。Sanctumとは関係ない話。
+Laravel11のデフォルトでは`/api/*`以下は全部どのドメインからでも許可しているので外部向けAPIをすべて`routes/api.php`で定義するなら何もしなくていい。
+
+## APIで外部からのログイン・ログアウト
+ここはcurlを使ったサンプル。
+
+```php
+// routes/api.php
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
+
+// registerも必要ならloginと同じように作る。
+
+Route::post('login', function (Request $request) {
+    if (Auth::attempt($request->only('email', 'password'))) {
+        $token = Auth::user()->createToken('user')->plainTextToken;
+        return response()->json(['message' => 'Login', 'token' => $token]);
+    } else {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+})->middleware('guest');
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
+
+    Route::delete('logout', function (Request $request) {
+        $request->user()->currentAccessToken()->delete();
+
+        return response()->json(['message' => 'Logout']);
+    });
+});
+```
+
+seederで作ったテストユーザー（test@example.comとpassword）でログインする。
+`php artisan serve`でLaravelを起動した状態で
+
+```shell
+curl -X POST -H "Content-Type: application/json" -d '{"email":"test@example.com","password":"password"}' http://127.0.0.1:8000/api/login
+```
+tokenを得られる。
+```shell
+{"message":"Login","token":"...token..."}
+```
+tokenを使ってAPIを利用したり
+```shell
+curl -H "Content-Type: application/json" -H "Authorization: Bearer ...token..." http://127.0.0.1:8000/api/user
+```
+ログアウト
+```shell
+curl -X DELETE -H "Content-Type: application/json" -H "Authorization: Bearer ...token..." http://127.0.0.1:8000/api/logout
+{"message":"Logout"}
+```
+
+## SPA認証は全く別の機能
+Sanctum内に2つの機能が含まれてるのが混乱の元なのでAPIトークン認証を使いたいならSPA認証のことは何も見ず忘れる。
