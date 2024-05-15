@@ -168,4 +168,10 @@ curl -X DELETE -H "Content-Type: application/json" -H "Authorization: Bearer ...
 Sanctum内に2つの機能が含まれてるのが混乱の元なのでAPIトークン認証を使いたいならSPA認証のことは何も見ず忘れる。
 
 SPA認証のサンプルはBreeze APIスタックを見る。
-SPA認証用のNext.jsを使ったフロント側のサンプルは https://github.com/laravel/breeze-next
+Next.jsを使ったフロント側のサンプルは https://github.com/laravel/breeze-next
+
+SPA認証なので`/sanctum/csrf-cookie`が出てくる。
+```javascript
+const csrf = () => axios.get('/sanctum/csrf-cookie')
+```
+https://github.com/laravel/breeze-next/blob/master/src/hooks/auth.js
