@@ -175,3 +175,15 @@ SPA認証なので`/sanctum/csrf-cookie`が出てくる。
 const csrf = () => axios.get('/sanctum/csrf-cookie')
 ```
 https://github.com/laravel/breeze-next/blob/master/src/hooks/auth.js
+
+SPA認証時のCORSは「特定のフロントエンドURLからはすべてのパスで許可する」設定。  
+このフロントエンドURLは**ファーストパーティ=同じトップレベルドメインのサブドメインまで**の範囲。（開発用にlocalhostだけはポート違いも許可）
+```php
+    'paths' => ['*'],
+
+    'allowed_methods' => ['*'],
+
+    'allowed_origins' => [env('FRONTEND_URL', 'http://localhost:3000')],
+```
+https://github.com/laravel/breeze/blob/2.x/stubs/api/config/cors.php
+「すべてのドメインから`/api/`以下だけ許可」のAPIトークン認証とは違う設定。
